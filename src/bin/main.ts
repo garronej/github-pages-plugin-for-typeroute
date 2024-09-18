@@ -96,11 +96,27 @@ fs.renameSync(
     join(pathToRouterJs),
 );
 
-const paths = id<string[]>(
-    JSON.parse(
-        execSync([pathToNode, pathToRouterJs].join(" ")).toString("utf8"),
-    ),
-)
+if (isVite) {
+    execSync(`mv package.json package.json.bak`);
+}
+
+let nodeExecOutput: Buffer | Error;
+
+try {
+    nodeExecOutput = execSync([pathToNode, pathToRouterJs].join(" "));
+} catch (error) {
+    nodeExecOutput = error as Error;
+}
+
+if (isVite) {
+    execSync(`mv package.json.bak package.json`);
+}
+
+if (nodeExecOutput instanceof Error) {
+    throw nodeExecOutput;
+}
+
+const paths = id<string[]>(JSON.parse(nodeExecOutput.toString("utf8")))
     .map(path => relative(PUBLIC_URL || "/", path))
     .filter(path => path !== "");
 
